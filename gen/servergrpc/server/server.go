@@ -21,19 +21,17 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	userservergrpc "gitlab.com/ingvarmattis/auth/gen/servergrpc/user"
-	"gitlab.com/ingvarmattis/auth/src/log"
+	exampleGRPC "github.com/ingvarmattis/example/gen/servergrpc/example"
+	"github.com/ingvarmattis/example/src/log"
 )
 
 const domain = "mattis.dev"
 
 var ErrPortNotSpecified = errors.New("port not specified")
 
-type GRPCUserHandlers interface {
-	Auth(ctx context.Context, in *userservergrpc.AuthRequest) (*userservergrpc.AuthResponse, error)
-	Register(ctx context.Context, in *userservergrpc.RegisterRequest) (*userservergrpc.RegisterResponse, error)
-	ChangeEmail(ctx context.Context, req *userservergrpc.ChangeEmailRequest) (*emptypb.Empty, error)
-	ChangePassword(ctx context.Context, req *userservergrpc.ChangePasswordRequest) (*emptypb.Empty, error)
+type GRPCExampleHandlers interface {
+	ServiceName(ctx context.Context, in *emptypb.Empty) (*exampleGRPC.ServiceNameResponse, error)
+	Status(ctx context.Context, in *exampleGRPC.StatusRequest) (*exampleGRPC.StatusResponse, error)
 }
 
 type GRPCErrors interface {
@@ -41,9 +39,9 @@ type GRPCErrors interface {
 }
 
 type Server struct {
-	userservergrpc.UnimplementedUserServiceServer
+	exampleGRPC.UnimplementedExampleServiceServer
 
-	UserHandlers GRPCUserHandlers
+	GRPCExampleHandlers GRPCExampleHandlers
 
 	Validator *validator.Validate
 	Logger    *log.Zap
@@ -126,7 +124,7 @@ func (s *Server) Close() {
 type NewServerOptions struct {
 	ServiceName string
 
-	GRPCAuthHandlers GRPCUserHandlers
+	GRPCExampleHandlers GRPCExampleHandlers
 
 	Logger    *log.Zap
 	Validator *validator.Validate
@@ -156,18 +154,18 @@ func NewGRPCServer(ctx context.Context, grpcPort int, opts *NewServerOptions) *S
 	}
 
 	s := Server{
-		grpcServer:                     grpcServer,
-		httpServer:                     httpServer,
-		Validator:                      opts.Validator,
-		UnimplementedUserServiceServer: userservergrpc.UnimplementedUserServiceServer{},
+		grpcServer:                        grpcServer,
+		httpServer:                        httpServer,
+		Validator:                         opts.Validator,
+		UnimplementedExampleServiceServer: exampleGRPC.UnimplementedExampleServiceServer{},
 
-		UserHandlers: opts.GRPCAuthHandlers,
+		GRPCExampleHandlers: opts.GRPCExampleHandlers,
 
 		Logger: opts.Logger,
 	}
-	userservergrpc.RegisterUserServiceServer(grpcServer, &s)
+	exampleGRPC.RegisterExampleServiceServer(grpcServer, &s)
 
-	if err := userservergrpc.RegisterUserServiceHandlerFromEndpoint(
+	if err := exampleGRPC.RegisterExampleServiceHandlerFromEndpoint(
 		ctx, httpServer, fmt.Sprintf("0.0.0.0:%v", grpcPort), httpOpts,
 	); err != nil {
 		panic(err)
@@ -178,25 +176,8 @@ func NewGRPCServer(ctx context.Context, grpcPort int, opts *NewServerOptions) *S
 	return &s
 }
 
-func (s *Server) Auth(ctx context.Context, req *userservergrpc.AuthRequest) (*userservergrpc.AuthResponse, error) {
-	if err := validate(s.Validator, req, errors.New("status error")); err != nil {
-		return nil, err
-	}
-
-	resp, err := s.UserHandlers.Auth(ctx, req)
-	if err != nil {
-		return nil, GRPCUnauthorizedError(err, nil)
-	}
-
-	return resp, nil
-}
-
-func (s *Server) Register(ctx context.Context, req *userservergrpc.RegisterRequest) (*userservergrpc.RegisterResponse, error) {
-	if err := validate(s.Validator, req, errors.New("status error")); err != nil {
-		return nil, err
-	}
-
-	resp, err := s.UserHandlers.Register(ctx, req)
+func (s *Server) ServiceName(ctx context.Context, req *emptypb.Empty) (*exampleGRPC.ServiceNameResponse, error) {
+	resp, err := s.GRPCExampleHandlers.ServiceName(ctx, req)
 	if err != nil {
 		return nil, GRPCUnknownError(err, nil)
 	}
@@ -204,25 +185,18 @@ func (s *Server) Register(ctx context.Context, req *userservergrpc.RegisterReque
 	return resp, nil
 }
 
-func (s *Server) ChangeEmail(ctx context.Context, req *userservergrpc.ChangeEmailRequest) (*emptypb.Empty, error) {
-	if err := validate(s.Validator, req, errors.New("status error")); err != nil {
-		return nil, err
-	}
-
-	resp, err := s.UserHandlers.ChangeEmail(ctx, req)
-	if err != nil {
-		return nil, GRPCUnknownError(err, nil)
-	}
-
-	return resp, nil
+type statusT struct {
+	serviceName string `validate:"required,serviceName"`
 }
 
-func (s *Server) ChangePassword(ctx context.Context, req *userservergrpc.ChangePasswordRequest) (*emptypb.Empty, error) {
-	if err := validate(s.Validator, req, errors.New("status error")); err != nil {
+func (s *Server) Status(ctx context.Context, req *exampleGRPC.StatusRequest) (*exampleGRPC.StatusResponse, error) {
+	reqT := statusT{serviceName: req.GetServiceName()}
+
+	if err := validate(s.Validator, reqT, errors.New("status error")); err != nil {
 		return nil, err
 	}
 
-	resp, err := s.UserHandlers.ChangePassword(ctx, req)
+	resp, err := s.GRPCExampleHandlers.Status(ctx, req)
 	if err != nil {
 		return nil, GRPCUnknownError(err, nil)
 	}

@@ -1,41 +1,24 @@
 syntax = "proto3";
 
-package mattis.services.user.v1;
+package ingvarmattis.services.example.v1;
 
-option go_package = "./gen/servergrpc/user;servergrpc";
+option go_package = "./gen/servergrpc/example;servergrpc";
 
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
-import "params/auth.proto";
-import "params/register.proto";
-import "params/edit.proto";
+import "params/service_name.proto";
+import "params/status.proto";
 
-service UserService {
-  rpc Auth(AuthRequest) returns (AuthResponse) {
+service ExampleService {
+  rpc ServiceName(google.protobuf.Empty) returns (ServiceNameResponse) {
     option (google.api.http) = {
-      post: "/v1/auth"
-      body: "*"
+      get: "/v1/service/name"
     };
   }
 
-  rpc Register(RegisterRequest) returns (RegisterResponse) {
+  rpc Status(StatusRequest) returns (StatusResponse) {
     option (google.api.http) = {
-      post: "/v1/register"
-      body: "*"
-    };
-  }
-
-  rpc ChangeEmail(ChangeEmailRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/v1/user/email"
-      body: "*"
-    };
-  }
-
-  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/v1/user/password"
-      body: "*"
+      post: "/v1/service/status"
     };
   }
 }

@@ -10,17 +10,12 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 
-	"gitlab.com/ingvarmattis/auth/gen/servergrpc/server"
-	"gitlab.com/ingvarmattis/auth/src/box"
-	"gitlab.com/ingvarmattis/auth/src/interceptors"
-	"gitlab.com/ingvarmattis/auth/src/log"
-	"gitlab.com/ingvarmattis/auth/src/repositories/user"
-	"gitlab.com/ingvarmattis/auth/src/rpctransport"
-	authrpc "gitlab.com/ingvarmattis/auth/src/rpctransport/user"
-	"gitlab.com/ingvarmattis/auth/src/services"
-	authSVC "gitlab.com/ingvarmattis/auth/src/services/user"
+	"github.com/ingvarmattis/example/gen/servergrpc/server"
+	"github.com/ingvarmattis/example/src/box"
+	"github.com/ingvarmattis/example/src/log"
+	exampleRPC "github.com/ingvarmattis/example/src/rpctransport/example"
+	"github.com/ingvarmattis/example/src/services"
 )
 
 func main() {
@@ -31,29 +26,26 @@ func main() {
 		panic(err)
 	}
 
-	logger := envBox.Logger
-
-	userStorage := user.NewPostgres(envBox.PGXPool, envBox.Encryptor)
-	userService := authSVC.NewService(envBox.Config.AuthConfig.Token, userStorage)
+	resources, err := box.NewResources(serverCTX, envBox)
+	if err != nil {
+		panic(err)
+	}
 
 	grpcCompetitorsServer := server.NewGRPCServer(
 		serverCTX,
 		envBox.Config.GRPCServerListenPort,
 		&server.NewServerOptions{
-			ServiceName:      envBox.Config.ServiceName,
-			GRPCAuthHandlers: &authrpc.Handlers{Service: services.SvcLayer{AuthService: userService}},
-			Validator:        rpctransport.MustValidate(),
-			Logger:           logger,
-			UnaryInterceptors: []grpc.UnaryServerInterceptor{
-				interceptors.UnaryServerAuthInterceptor(envBox.Config.AuthConfig.Token),
-				interceptors.UnaryServerMetricsInterceptor(envBox.Config.ServiceName),
-				interceptors.UnaryServerTraceInterceptor(envBox.Tracer, envBox.Config.ServiceName),
-				interceptors.UnaryServerLogInterceptor(logger.With("module", "log", "grpc"), envBox.Config.Debug),
-				interceptors.UnaryServerPanicsInterceptor(logger.With("module", "log"), envBox.Config.ServiceName)},
-			StreamInterceptors: nil,
+			ServiceName: envBox.Config.ServiceName,
+			GRPCExampleHandlers: &exampleRPC.Handlers{
+				Service: services.SvcLayer{
+					ExampleService: resources.ExampleService}},
+			Validator:          resources.Validator,
+			Logger:             envBox.Logger,
+			UnaryInterceptors:  resources.UnaryServerInterceptors,
+			StreamInterceptors: resources.StreamServerInterceptors,
 		})
 
-	metricsServer := server.NewMetricsServer(logger, envBox.Config.HTTPMetricsServerListenPort)
+	metricsServer := server.NewMetricsServer(envBox.Logger, envBox.Config.MetricsConfig.MetricsServerListenHTTPPort)
 
 	// working functions
 	workingFunctions := []func() error{
@@ -85,14 +77,14 @@ func main() {
 	for i := range len(workingFunctions) {
 		go func() {
 			if err = workingFunctions[i](); err != nil {
-				logger.Error("working function failed", zap.Error(err))
+				envBox.Logger.Error("working function failed", zap.Error(err))
 				os.Exit(1)
 			}
 		}()
 	}
 
 	gracefullShutdown(
-		logger,
+		envBox.Logger,
 		grpcCompetitorsServer, envBox.PGXPool,
 		metricsServer,
 		envBox.TraceProvider,
@@ -100,7 +92,7 @@ func main() {
 
 	serverCancel()
 
-	logger.Info("service has been shutdown")
+	envBox.Logger.Info("service has been shutdown")
 }
 
 type (

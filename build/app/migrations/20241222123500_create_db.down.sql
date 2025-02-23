@@ -1,6 +1,6 @@
 begin;
 
-drop table  if exists auth.users;
-drop schema if exists auth;
+drop table  if exists example.services;
+drop schema if exists example;
 
 end;

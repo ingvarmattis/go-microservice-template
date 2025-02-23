@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ingvarmattis.services.example.v1;
+
+option go_package = "./gen/servergrpc/example;servergrpc";
+
+message StatusRequest {
+  string ServiceName = 1;
+}
+
+message StatusResponse {
+  Status Status = 1;
+}
+
+enum Status {
+  UNKNOWN = 0;
+  REGISTERED = 1;
+  NOT_REGISTERED = 2;
+}

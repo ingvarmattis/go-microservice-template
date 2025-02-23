@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
-	"gitlab.com/ingvarmattis/auth/src/log"
+	"github.com/ingvarmattis/example/src/log"
 )
 
 func UnaryServerLogInterceptor(logger *log.Zap, debugMode bool) grpc.UnaryServerInterceptor {

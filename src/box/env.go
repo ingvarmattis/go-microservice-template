@@ -15,9 +15,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.com/ingvarmattis/auth/src/config"
-	"gitlab.com/ingvarmattis/auth/src/encryption"
-	"gitlab.com/ingvarmattis/auth/src/log"
+	"github.com/ingvarmattis/example/src/config"
+	"github.com/ingvarmattis/example/src/log"
 )
 
 type Env struct {
@@ -29,8 +28,6 @@ type Env struct {
 
 	TraceProvider *sdkTrace.TracerProvider
 	Tracer        trace.Tracer
-
-	Encryptor *encryption.Crypto
 }
 
 func NewENV(ctx context.Context) (*Env, error) {
@@ -51,15 +48,12 @@ func NewENV(ctx context.Context) (*Env, error) {
 		return nil, fmt.Errorf("error creating tracer | %w", err)
 	}
 
-	crypto := provideCrypto(cfg.CryptoConfig.Key)
-
 	return &Env{
 		Config:        cfg,
 		PGXPool:       pgPool,
 		Logger:        logger,
 		Tracer:        tracer,
 		TraceProvider: traceProvider,
-		Encryptor:     crypto,
 	}, nil
 }
 
@@ -125,8 +119,4 @@ func provideTracer(
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	return otel.Tracer(serviceName), tp, nil
-}
-
-func provideCrypto(key []byte) *encryption.Crypto {
-	return encryption.NewCrypto(key)
 }

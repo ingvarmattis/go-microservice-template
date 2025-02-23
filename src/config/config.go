@@ -8,18 +8,17 @@ import (
 )
 
 type Config struct {
-	Debug                       bool `envconfig:"AUTH_DEBUG" default:"false"`
-	GRPCServerListenPort        int  `envconfig:"AUTH_GRPC_SERVER_LISTEN_PORT" required:"true"`
-	HTTPServerListenPort        int  `envconfig:"AUTH_HTTP_SERVER_LISTEN_PORT" required:"true"`
-	HTTPMetricsServerListenPort int  `envconfig:"AUTH_HTTP_METRICS_SERVER_LISTEN_PORT" required:"true"`
+	Debug bool `envconfig:"EXAMPLE_SERVICE_DEBUG" default:"false"`
 
-	HostName    string `envconfig:"AUTH_HOST_NAME"`
-	ServiceName string `envconfig:"AUTH_SERVICE_NAME"`
+	GRPCServerListenPort int `envconfig:"EXAMPLE_SERVICE_GRPC_SERVER_LISTEN_PORT" required:"true"`
+	HTTPServerListenPort int `envconfig:"EXAMPLE_SERVICE_HTTP_SERVER_LISTEN_PORT" required:"true"`
+
+	HostName    string `envconfig:"EXAMPLE_SERVICE_HOST_NAME"`
+	ServiceName string `envconfig:"EXAMPLE_SERVICE_SERVICE_NAME"`
 
 	PostgresConfig PostgresConfig
+	MetricsConfig  MetricsConfig
 	TracingConfig  TracingConfig
-	AuthConfig     AuthConfig
-	CryptoConfig   CryptoConfig
 }
 
 func FromEnv() (*Config, error) {
@@ -29,7 +28,7 @@ func FromEnv() (*Config, error) {
 		cfg.HostName = hostName
 	}
 
-	if err := envconfig.Process("AUTH", cfg); err != nil {
+	if err := envconfig.Process("EXAMPLE_SERVICE", cfg); err != nil {
 		return nil, fmt.Errorf("error while parsing environment variables | %w", err)
 	}
 
@@ -37,27 +36,24 @@ func FromEnv() (*Config, error) {
 }
 
 type PostgresConfig struct {
-	URL string `envconfig:"AUTH_POSTGRES_URL" required:"true"`
+	URL string `envconfig:"EXAMPLE_SERVICE_POSTGRES_URL" required:"true"`
+}
+
+type MetricsConfig struct {
+	MetricsEnables              bool `envconfig:"EXAMPLE_SERVICE_METRICS_ENABLED" required:"true"`
+	MetricsServerListenHTTPPort int  `envconfig:"EXAMPLE_SERVICE_HTTP_METRICS_SERVER_LISTEN_PORT" required:"true"`
 }
 
 type TracingConfig struct {
-	URL    string `envconfig:"AUTH_OPENTELEMETRY_COLLECTOR_URL" required:"true"`
-	UseTLS bool   `envconfig:"AUTH_OPENTELEMETRY_USE_TLS" required:"true"`
+	URL    string `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_COLLECTOR_URL" required:"true"`
+	UseTLS bool   `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_USE_TLS" required:"true"`
 }
 
 type OpenAIConfig struct {
-	APIKey string `envconfig:"AUTH_OPENAI_API_KEY" required:"true"`
+	APIKey string `envconfig:"EXAMPLE_SERVICE_OPENAI_API_KEY" required:"true"`
 }
 
 type BrowserConfig struct {
-	BrowserURLs            []string `envconfig:"AUTH_BROWSER_URLS" required:"true"`
-	MaxParallelBrowserTabs int      `envconfig:"AUTH_MAX_PARALLEL_BROWSER_TABS" required:"true"`
-}
-
-type AuthConfig struct {
-	Token []byte `envconfig:"AUTH_AUTH_TOKEN" required:"true"`
-}
-
-type CryptoConfig struct {
-	Key []byte `envconfig:"AUTH_CRYPTO_KEY" required:"true"`
+	BrowserURLs            []string `envconfig:"EXAMPLE_SERVICE_BROWSER_URLS" required:"true"`
+	MaxParallelBrowserTabs int      `envconfig:"EXAMPLE_SERVICE_MAX_PARALLEL_BROWSER_TABS" required:"true"`
 }

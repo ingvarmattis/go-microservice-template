@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package ingvarmattis.services.example.v1;
+
+option go_package = "./gen/servergrpc/example;servergrpc";
+
+message ServiceNameResponse {
+  string Name = 1;
+}

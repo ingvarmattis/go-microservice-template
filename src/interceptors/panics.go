@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 
-	"gitlab.com/ingvarmattis/auth/src/log"
+	"github.com/ingvarmattis/example/src/log"
 )
 
 func UnaryServerPanicsInterceptor(logger *log.Zap, serviceName string) grpc.UnaryServerInterceptor {
