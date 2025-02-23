@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package mattis.services.user.v1;
+
+option go_package = "./gen/servergrpc/user;servergrpc";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+import "params/auth.proto";
+import "params/register.proto";
+import "params/edit.proto";
+
+service UserService {
+  rpc Auth(AuthRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/v1/auth"
+      body: "*"
+    };
+  }
+
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/v1/register"
+      body: "*"
+    };
+  }
+
+  rpc ChangeEmail(ChangeEmailRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/user/email"
+      body: "*"
+    };
+  }
+
+  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/v1/user/password"
+      body: "*"
+    };
+  }
+}

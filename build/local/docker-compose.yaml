@@ -1,0 +1,54 @@
+name: 'auth'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  auth:
+    image: us-central1-docker.pkg.dev/regions-spy/containers/auth:latest
+    restart: always
+    environment:
+      AUTH_SERVICE_NAME: auth
+      AUTH_DEBUG: false
+      AUTH_GRPC_SERVER_LISTEN_PORT: 8000
+      AUTH_HTTP_METRICS_SERVER_LISTEN_PORT: 8001
+      AUTH_HTTP_SERVER_LISTEN_PORT: 8002
+      AUTH_POSTGRES_URL: STORE_IN_GITLAB
+      AUTH_OPENTELEMETRY_COLLECTOR_URL: opentelemetry-collector.observability.svc:4317
+      AUTH_OPENTELEMETRY_USE_TLS: true
+      AUTH_AUTH_TOKEN: STORE_IN_GITLAB
+    ports:
+      - "8000:8000"
+  nginx:
+    image: us-central1-docker.pkg.dev/regions-spy/containers/nginx-runner:latest
+    restart: always
+    depends_on:
+      - auth
+    ports:
+      - "80:80"
+      - "443:443"
+  swagger-ui:
+    image: us-central1-docker.pkg.dev/regions-spy/containers/swagger-runner:latest
+    ports:
+      - "8080:8080"
+    environment:
+      URLS: '[{"url":"/swagger/analyzer.swagger.json","name":"Analyzer API"},{"url":"/swagger/user.swagger.json","name":"Authorization API"}]'
+    volumes:
+      - ../../gen/docs/analyzer.swagger.json:/swagger/analyzer.swagger.json
+      - ../../gen/docs/user.swagger.json:/swagger/user.swagger.json
+  frontend-ui:
+    image: us-central1-docker.pkg.dev/regions-spy/containers/la-gatita:latest
+    restart: always
+    ports:
+      - "8081:80"
