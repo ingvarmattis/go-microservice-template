@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"sync"
 	"syscall"
 	"time"
@@ -31,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	grpcCompetitorsServer := server.NewGRPCServer(
+	grpcCompetitorsServer := server.NewServer(
 		serverCTX,
 		envBox.Config.GRPCServerListenPort,
 		&server.NewServerOptions{

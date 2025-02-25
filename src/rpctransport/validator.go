@@ -10,7 +10,7 @@ func NewValidator() (*validator.Validate, error) {
 	validate := validator.New()
 
 	if err := validate.RegisterValidation("serviceName", validateServiceName); err != nil {
-		return nil, fmt.Errorf("error while register validation `email` | %w", err)
+		return nil, fmt.Errorf("error while register validation `serviceName` | %w", err)
 	}
 
 	return validate, nil

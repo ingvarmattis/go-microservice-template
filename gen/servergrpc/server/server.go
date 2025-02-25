@@ -135,7 +135,7 @@ type NewServerOptions struct {
 	ServerOptions []grpc.ServerOption
 }
 
-func NewGRPCServer(ctx context.Context, grpcPort int, opts *NewServerOptions) *Server {
+func NewServer(ctx context.Context, grpcPort int, opts *NewServerOptions) *Server {
 	srvOpts := make([]grpc.ServerOption, 0)
 
 	srvOpts = append(
@@ -147,23 +147,25 @@ func NewGRPCServer(ctx context.Context, grpcPort int, opts *NewServerOptions) *S
 	grpcServer := grpc.NewServer(srvOpts...)
 
 	httpServer := runtime.NewServeMux()
-	httpOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	if opts.Validator == nil {
 		opts.Validator = validator.New()
 	}
 
 	s := Server{
-		grpcServer:                        grpcServer,
-		httpServer:                        httpServer,
-		Validator:                         opts.Validator,
 		UnimplementedExampleServiceServer: exampleGRPC.UnimplementedExampleServiceServer{},
 
 		GRPCExampleHandlers: opts.GRPCExampleHandlers,
 
-		Logger: opts.Logger,
+		Validator: opts.Validator,
+		Logger:    opts.Logger,
+
+		grpcServer: grpcServer,
+		httpServer: httpServer,
 	}
 	exampleGRPC.RegisterExampleServiceServer(grpcServer, &s)
+
+	httpOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	if err := exampleGRPC.RegisterExampleServiceHandlerFromEndpoint(
 		ctx, httpServer, fmt.Sprintf("0.0.0.0:%v", grpcPort), httpOpts,
@@ -186,11 +188,13 @@ func (s *Server) ServiceName(ctx context.Context, req *emptypb.Empty) (*exampleG
 }
 
 type statusT struct {
-	serviceName string `validate:"required,serviceName"`
+	ServiceName string `validate:"required,serviceName"`
 }
 
 func (s *Server) Status(ctx context.Context, req *exampleGRPC.StatusRequest) (*exampleGRPC.StatusResponse, error) {
-	reqT := statusT{serviceName: req.GetServiceName()}
+	reqT := statusT{
+		ServiceName: req.GetServiceName(),
+	}
 
 	if err := validate(s.Validator, reqT, errors.New("status error")); err != nil {
 		return nil, err
