@@ -40,20 +40,16 @@ type PostgresConfig struct {
 }
 
 type MetricsConfig struct {
-	MetricsEnables              bool `envconfig:"EXAMPLE_SERVICE_METRICS_ENABLED" required:"true"`
-	MetricsServerListenHTTPPort int  `envconfig:"EXAMPLE_SERVICE_HTTP_METRICS_SERVER_LISTEN_PORT" required:"true"`
+	Enabled bool `envconfig:"EXAMPLE_SERVICE_METRICS_ENABLED" required:"true"`
+	Port    int  `envconfig:"EXAMPLE_SERVICE_HTTP_METRICS_SERVER_LISTEN_PORT" required:"true"`
 }
 
 type TracingConfig struct {
-	URL    string `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_COLLECTOR_URL" required:"true"`
-	UseTLS bool   `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_USE_TLS" required:"true"`
+	Enabled bool   `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_ENABLED" required:"true"`
+	URL     string `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_COLLECTOR_URL" required:"true"`
+	UseTLS  bool   `envconfig:"EXAMPLE_SERVICE_OPENTELEMETRY_USE_TLS" required:"true"`
 }
 
 type OpenAIConfig struct {
 	APIKey string `envconfig:"EXAMPLE_SERVICE_OPENAI_API_KEY" required:"true"`
-}
-
-type BrowserConfig struct {
-	BrowserURLs            []string `envconfig:"EXAMPLE_SERVICE_BROWSER_URLS" required:"true"`
-	MaxParallelBrowserTabs int      `envconfig:"EXAMPLE_SERVICE_MAX_PARALLEL_BROWSER_TABS" required:"true"`
 }
