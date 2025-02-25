@@ -59,14 +59,21 @@ func main() {
 			return nil
 		},
 		func() error {
-			if httpServerErr := grpcCompetitorsServer.ServeHTTP(&envBox.Config.HTTPServerListenPort); err != nil {
+			if httpServerErr := grpcCompetitorsServer.ServeHTTP(
+				&envBox.Config.HTTPServerListenPort,
+			); httpServerErr != nil && !errors.Is(httpServerErr, http.ErrServerClosed) {
 				return fmt.Errorf("cannot start http server | %w", httpServerErr)
 			}
 
 			return nil
 		},
 		func() error {
-			if httpMetricsErr := metricsServer.ListenAndServe(); httpMetricsErr != nil {
+			if metricsServer.Name() == "noop" {
+				return nil
+			}
+
+			if httpMetricsErr := metricsServer.ListenAndServe(); httpMetricsErr != nil &&
+				!errors.Is(httpMetricsErr, http.ErrServerClosed) {
 				return fmt.Errorf("cannot start http metrics server | %w", httpMetricsErr)
 			}
 
@@ -99,8 +106,9 @@ type (
 	closer interface {
 		Close()
 	}
-	closerWithErr interface {
+	metricsCloser interface {
 		Close() error
+		Name() string
 	}
 	shutdowner interface {
 		Shutdown(ctx context.Context) error
@@ -130,6 +138,9 @@ func gracefullShutdown(
 		},
 		func() {
 			defer shutdownWG.Done()
+			if metricsServerHTTP.Name() == "noop" {
+				return
+			}
 
 			if err := metricsServerHTTP.Close(); err != nil {
 				logger.Error("failed to close metrics server", zap.Error(err))
@@ -143,11 +154,13 @@ func gracefullShutdown(
 		func() {
 			defer shutdownWG.Done()
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			defer cancel()
+			if !reflect.ValueOf(traceProvider).IsNil() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
 
-			if err := traceProvider.Shutdown(ctx); err != nil {
-				logger.Error("failed to close tracer", zap.Error(err))
+				if err := traceProvider.Shutdown(ctx); err != nil {
+					logger.Error("failed to close tracer", zap.Error(err))
+				}
 			}
 		},
 		func() {
