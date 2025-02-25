@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -24,19 +25,15 @@ func UnaryServerMetricsInterceptor(enabled bool, serviceName string) grpc.UnaryS
 	serviceName = strings.ReplaceAll(serviceName, "-", "_")
 
 	grpcDurations := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: serviceName,
-		Subsystem: "grpc",
-		Name:      "responses_duration_seconds",
-		Help:      "Response time by method and error code.",
-		Buckets:   []float64{.005, .01, .05, .1, .5, 1, 5, 10, 15, 20, 25, 30, 60, 90},
-	}, []string{"method", "code"})
+		Name:    "responses_duration_seconds",
+		Help:    "Response time by method and error code.",
+		Buckets: []float64{.005, .01, .05, .1, .5, 1, 5, 10, 15, 20, 25, 30, 60, 90},
+	}, []string{"service", "subsystem", "method", "code"})
 
 	grpcErrors := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: serviceName,
-		Subsystem: "grpc",
-		Name:      "error_requests_count",
-		Help:      "Error requests count by method and error code.",
-	}, []string{"method", "code"})
+		Name: "error_requests_count",
+		Help: "Error requests count by method and error code.",
+	}, []string{"service", "subsystem", "method", "code"})
 
 	prometheus.MustRegister(grpcDurations, grpcErrors)
 
@@ -45,24 +42,31 @@ func UnaryServerMetricsInterceptor(enabled bool, serviceName string) grpc.UnaryS
 	) (any, error) {
 		start := time.Now()
 
+		var subsystem string
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			if len(md.Get("grpcgateway-user-agent")) > 0 {
+				subsystem = "http"
+			} else {
+				subsystem = "grpc"
+			}
+		}
+
 		method := extractShortMethodName(info.FullMethod)
 
 		resp, err := handler(ctx, req)
 		if err != nil {
-			grpcErrors.WithLabelValues(method, status.Code(err).String()).Inc()
+			grpcErrors.WithLabelValues(serviceName, subsystem, method, status.Code(err).String()).Inc()
 		}
 
-		grpcDurations.WithLabelValues(method, status.Code(err).String()).Observe(time.Since(start).Seconds())
+		grpcDurations.WithLabelValues(serviceName, subsystem, method, status.Code(err).String()).Observe(time.Since(start).Seconds())
 
 		return resp, err
 	}
 }
 
 func extractShortMethodName(fullMethod string) string {
-	split := strings.Split(fullMethod, ".")
-
-	if len(split) > 0 {
-		return split[len(split)-1]
+	if idx := strings.LastIndex(fullMethod, "/"); idx != -1 {
+		return fullMethod[idx+1:]
 	}
 
 	return methodNameUnknown
