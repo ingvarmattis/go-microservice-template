@@ -43,7 +43,7 @@ func NewENV(ctx context.Context) (*Env, error) {
 
 	logger := provideLogger()
 
-	tracer, traceProvider, err := provideTracer(ctx, cfg.ServiceName, cfg.TracingConfig.URL, cfg.TracingConfig.UseTLS)
+	tracer, traceProvider, err := provideTracer(ctx, cfg.TracingConfig.Enabled, cfg.ServiceName, cfg.TracingConfig.URL, cfg.TracingConfig.UseTLS)
 	if err != nil {
 		return nil, fmt.Errorf("error creating tracer | %w", err)
 	}
@@ -92,8 +92,13 @@ func provideLogger() *log.Zap {
 }
 
 func provideTracer(
-	ctx context.Context, serviceName, openTelemetryCollectorURL string, secureConnection bool,
+	ctx context.Context, enabled bool, serviceName, openTelemetryCollectorURL string, secureConnection bool,
 ) (trace.Tracer, *sdkTrace.TracerProvider, error) {
+	if !enabled {
+		tracer := otel.Tracer("noop")
+		return tracer, nil, nil
+	}
+
 	exporter, err := otlptracegrpc.New(ctx, func() otlptracegrpc.Option {
 		if secureConnection {
 			return otlptracegrpc.WithInsecure()

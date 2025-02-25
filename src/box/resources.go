@@ -40,7 +40,7 @@ func NewResources(ctx context.Context, envBox *Env) (*Resources, error) {
 
 func provideUnaryInterceptors(envBox *Env) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
-		interceptors.UnaryServerMetricsInterceptor(envBox.Config.ServiceName),
+		interceptors.UnaryServerMetricsInterceptor(envBox.Config.MetricsConfig.Enabled, envBox.Config.ServiceName),
 		interceptors.UnaryServerTraceInterceptor(envBox.Tracer, envBox.Config.ServiceName),
 		interceptors.UnaryServerLogInterceptor(
 			envBox.Logger.With("module", "log", "grpc"), envBox.Config.Debug,

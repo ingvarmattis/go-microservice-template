@@ -12,7 +12,15 @@ import (
 
 const methodNameUnknown = "unknown"
 
-func UnaryServerMetricsInterceptor(serviceName string) grpc.UnaryServerInterceptor {
+func UnaryServerMetricsInterceptor(enabled bool, serviceName string) grpc.UnaryServerInterceptor {
+	if !enabled {
+		return func(
+			ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+		) (interface{}, error) {
+			return handler(ctx, req)
+		}
+	}
+
 	serviceName = strings.ReplaceAll(serviceName, "-", "_")
 
 	grpcDurations := prometheus.NewHistogramVec(prometheus.HistogramOpts{

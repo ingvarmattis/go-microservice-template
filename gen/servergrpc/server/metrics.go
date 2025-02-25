@@ -28,7 +28,16 @@ func (m *MetricsServer) Name() string {
 	return m.name
 }
 
-func NewMetricsServer(logger *log.Zap, port int) *MetricsServer {
+func NewMetricsServer(enabled bool, logger *log.Zap, port int) *MetricsServer {
+	if !enabled {
+		return &MetricsServer{
+			name:   "noop",
+			Server: nil,
+			port:   port,
+			logger: logger,
+		}
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
