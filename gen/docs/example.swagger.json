@@ -57,10 +57,12 @@
         },
         "parameters": [
           {
-            "name": "ServiceName",
-            "in": "query",
-            "required": false,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1StatusRequest"
+            }
           }
         ],
         "tags": [
@@ -111,6 +113,14 @@
       "type": "object",
       "properties": {
         "Name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1StatusRequest": {
+      "type": "object",
+      "properties": {
+        "ServiceName": {
           "type": "string"
         }
       }
