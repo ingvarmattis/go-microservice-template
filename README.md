@@ -1,51 +1,46 @@
 # Service description
-Example service is existing to build from box ready to production service.
-The service has the ability to provide data both via REST API and gRPC simultaneously.
+Example Service is designed for quickly creating production-ready microservices.
+It natively supports two APIs out of the box: gRPC and REST, both generated from .proto files.
 
 ## Table of Contents
 - [Development](#development)
   - [Project structure](#project-structure)
-  - [How to run locally and debug](#how-to-run-locally-and-debug)
-  - [How to create and execute DB migrations](#how-to-create-and-execute-db-migrations)
-  - [Deploy description](#deploy-description)
-- [Monitoring and tracing](#monitoring)
-- [Questions/Feedback](#questions-or-feedback)
+  - [How to run locally and debug](#running-locally-and-debugging)
+  - [How to create and execute DB migrations](#creating-and-executing-database-migrations)
+- [Monitoring and tracing](#monitoring-and-tracing)
+- [Questions/Feedback](#questions-and-feedback)
 
 # Development
 ## Project structure
-- [docker](build%2Fapp%2Fdocker) - contains Dockerfile to build the app.
-- [migrations](build%2Fapp%2Fmigrations) - contains migrations for DB.
-- [cmd](cmd) - contains main function.
-- [gen](gen) - contains generated code from .proto files and server implementation, swagger docs and server implementation.
-- [k8s](k8s) - contains `helm` folder with `values.yaml` and `custom_manifests` folder which you can populate later, and they will be auto applied via `kubectl apply` in the pipeline
-- [pkg](pkg) - contains external clients and generated clients with there protos.
-- [src](src) - contains source code of a sample app.
-- [.golangci.yml](.golangci.yml) - describes linter policy.
-- [.quazar.yml](.quazar.yml) - describes Quazar integration.
-- [makefile](makefile) - contains all needed scripts for local debug and coding.
+- [docker](build/app/docker) - Contains the Dockerfile for building the application.
+- [migrations](build/app/migrations) - Contains database migration scripts.
+- [cmd](cmd) - Contains the application's entry point.
+- [gen](gen) - Stores generated code from .proto files, including server implementations and Swagger documentation.
+- [src](src) - Contains the application's source code.
+- [.golangci.yml](.golangci.yml)(.golangci.yml) - Defines linting rules and policies.
+- [makefile](makefile) - Contains essential scripts for local development and debugging.
 
-## How to run locally and debug
-You can debug an application locally.
-To do this, you should:
-- Go to the [makefile](makefile)
-- Run `local-deps-up` script. All needed dependencies will start.
-- Run `local-migrations-up` script. All needed migrations will be processed.
-- Copy all [env vars](build/local/.env) from `./build/local/.env`.
-- Run application with environments you copied.
-- Profit. Now you can make queries to the service with URL `localhost:8000`
+## Running Locally and Debugging
+To run and debug the application locally, follow these steps:
+- Open the [Makefile](makefile).
+- Run the `local-deps-up` script to start all required dependencies.
+- Run the `local-migrations-up` script to apply necessary database migrations.
+- Copy all environment variables from [env vars](build/local/.env).
+- Start the application using the copied environment variables.
+- Done! You can now make requests to the service at `http://localhost:8000`.
 
-## How to create and execute DB migrations
-We use migration tool to create changes in DB. To create a new migration:
-- Go to [makefile](makefile)
-- Run `local-create-migration` with specified name
-- Go to [migrations](build/app/migrations)
-- Fill created files with needed scripts
-- Debug this the script locally with `local-deps-up` and `local-deps-down` scripts
-- Migrations will be applied automatically on RC after a main pipeline succeeded
-- Migrations will be applied automatically on PROD after a tag pipeline succeeded
+## Creating and Executing Database Migrations
+This service uses a migration tool for database schema changes.
+To create a new migration, follow these steps:
+- Open the [makefile](makefile).
+- Run the `local-create-migration` script with a specified name.
+- Navigate to the [migrations](build/app/migrations) directory.
+- Edit the newly created migration files and add the required SQL scripts.
+- (Optional) Start a local database instance using local-deps-up and stop it using local-deps-down.
+- Apply and test the migrations locally using `local-migrations-up` and `local-migrations-down`.
 
 ## Monitoring and tracing
-The Service contains predefined metrics which can be pulled from /metrics path, and it contains predefined tracing with OpenTelemetry.
+The service exposes predefined metrics at the /metrics endpoint and includes tracing via OpenTelemetry.
 
-## Questions or feedback?
-For service question contact ingvar@mattis.dev.
+## Questions and feedback?
+For any questions regarding this service, contact ingvar@mattis.dev.
