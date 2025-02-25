@@ -20,7 +20,8 @@ local-migrations-down:
 	yes | migrate -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -path ./build/app/migrations down
 
 #Generate .proto
-##download-dependencies is needed to download ./gen/protos/google/api/* files
+## download-dependencies is needed to download ./gen/protos/google/api/* files
+## you need to manually move google/api/annotations.proto and google/api/http.proto to gen/protos
 download-dependencies:
 	git clone https://github.com/googleapis/googleapis.git
 
@@ -39,8 +40,8 @@ generate-proto:
 
 #Unit tests
 unit-tests:
-	go test -v -tags unit_tests -race -coverpkg ./... ./...
+	go test -v -tags unit_tests ./... ./...
 
 #Build
-build-applications:
+build-application:
 	docker build -t example -f ./build/app/docker/Dockerfile .
