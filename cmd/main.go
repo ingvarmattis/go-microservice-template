@@ -45,7 +45,8 @@ func main() {
 			StreamInterceptors: resources.StreamServerInterceptors,
 		})
 
-	metricsServer := server.NewMetricsServer(envBox.Logger, envBox.Config.MetricsConfig.MetricsServerListenHTTPPort)
+	metricsServer := server.NewMetricsServer(
+		envBox.Config.MetricsConfig.Enabled, envBox.Logger, envBox.Config.MetricsConfig.Port)
 
 	// working functions
 	workingFunctions := []func() error{
@@ -118,7 +119,7 @@ type (
 func gracefullShutdown(
 	logger *log.Zap,
 	serverGRPC, pgxPool closer,
-	metricsServerHTTP closerWithErr,
+	metricsServerHTTP metricsCloser,
 	traceProvider shutdowner,
 ) {
 	quit := make(chan os.Signal, 1)
@@ -133,7 +134,6 @@ func gracefullShutdown(
 	shutdownFunctions := []func(){
 		func() {
 			defer shutdownWG.Done()
-
 			serverGRPC.Close()
 		},
 		func() {
@@ -148,7 +148,6 @@ func gracefullShutdown(
 		},
 		func() {
 			defer shutdownWG.Done()
-
 			pgxPool.Close()
 		},
 		func() {
@@ -165,7 +164,6 @@ func gracefullShutdown(
 		},
 		func() {
 			defer shutdownWG.Done()
-
 			if err := logger.Close(); err != nil {
 				logger.Error("failed to close logger", zap.Error(err))
 			}
