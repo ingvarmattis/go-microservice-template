@@ -1,3 +1,8 @@
+#Prepare template
+prepare-template:
+	rm -r ./.git
+	./scripts/replace_service.sh ./go-microservice-template old-service new-service
+
 #Lint
 go-lint:
 	golangci-lint run
@@ -20,27 +25,31 @@ local-migrations-down:
 	yes | migrate -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -path ./build/app/migrations down
 
 #Generate .proto
-## download-dependencies is needed to download ./gen/protos/google/api/* files
-## you need to manually move google/api/annotations.proto and google/api/http.proto to gen/protos
 download-dependencies:
-	git clone https://github.com/googleapis/googleapis.git
+	if not exist gen\protos\google\api mkdir gen\protos\google\api
+	curl -L -o gen\protos\google\api\annotations.proto https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto
+	curl -L -o gen\protos\google\api\http.proto https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto
 
 generate-proto:
 	protoc \
-      --proto_path=./gen/protos \
-      --proto_path=./gen/protos/google/api \
-      --proto_path=./gen/protos/params \
-      --go_out=. \
-      --go-grpc_out=. \
-      --grpc-gateway_out=. \
-      --openapiv2_out=./gen/docs \
-      --openapiv2_opt logtostderr=true \
-      ./gen/protos/*.proto \
-      ./gen/protos/*/*.proto
+		--proto_path=./gen/protos \
+		--proto_path=./gen/protos/google/api \
+		--proto_path=./gen/protos/params \
+		--go_out=. \
+		--go-grpc_out=. \
+		--grpc-gateway_out=. \
+		--openapiv2_out=./gen/docs \
+		--openapiv2_opt logtostderr=true \
+		./gen/protos/*.proto \
+		./gen/protos/params/*.proto
 
 #Unit tests
+export CGO_ENABLED=1
 unit-tests:
-	go test -v -tags unit_tests ./... ./...
+	go test -v -tags unit_tests -race ./... ./...
+
+benchmark-tests:
+	go test -v -tags unit_tests -bench=. -benchmem ./... ./...
 
 #Build
 build-application:

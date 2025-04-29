@@ -19,6 +19,8 @@ import (
 	"github.com/ingvarmattis/example/src/log"
 )
 
+const NotOperational = "noop"
+
 type Env struct {
 	Config *config.Config
 
@@ -95,7 +97,7 @@ func provideTracer(
 	ctx context.Context, enabled bool, serviceName, openTelemetryCollectorURL string, secureConnection bool,
 ) (trace.Tracer, *sdkTrace.TracerProvider, error) {
 	if !enabled {
-		tracer := otel.Tracer("noop")
+		tracer := otel.Tracer(NotOperational)
 		return tracer, nil, nil
 	}
 

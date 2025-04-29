@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
+	"github.com/ingvarmattis/example/src/box"
 	"github.com/ingvarmattis/example/src/log"
 )
 
@@ -31,7 +32,7 @@ func (m *MetricsServer) Name() string {
 func NewMetricsServer(enabled bool, logger *log.Zap, port int) *MetricsServer {
 	if !enabled {
 		return &MetricsServer{
-			name:   "noop",
+			name:   box.NotOperational,
 			Server: nil,
 			port:   port,
 			logger: logger,

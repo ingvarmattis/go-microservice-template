@@ -40,8 +40,8 @@ func main() {
 		&server.NewServerOptions{
 			ServiceName: envBox.Config.ServiceName,
 			GRPCExampleHandlers: &exampleRPC.Handlers{
-				Service: services.SvcLayer{
-					ExampleService: resources.ExampleService}},
+				Service: services.SvcLayer{ExampleService: resources.ExampleService},
+			},
 			Validator:          resources.Validator,
 			Logger:             envBox.Logger,
 			UnaryInterceptors:  resources.UnaryServerInterceptors,
@@ -72,7 +72,7 @@ func main() {
 			return nil
 		},
 		func() error {
-			if metricsServer.Name() == "noop" {
+			if metricsServer.Name() == box.NotOperational {
 				return nil
 			}
 
@@ -141,7 +141,7 @@ func gracefullShutdown(
 		},
 		func() {
 			defer shutdownWG.Done()
-			if metricsServerHTTP.Name() == "noop" {
+			if metricsServerHTTP.Name() == box.NotOperational {
 				return
 			}
 
