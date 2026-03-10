@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -19,6 +20,14 @@ type Config struct {
 	PostgresConfig PostgresConfig
 	MetricsConfig  MetricsConfig
 	TracingConfig  TracingConfig
+	TelegramConfig TelegramConfig
+}
+
+type TelegramConfig struct {
+	Enabled        bool          `envconfig:"EXAMPLE_SERVICE_TELEGRAM_ENABLED" default:"false"`
+	Token          string        `envconfig:"EXAMPLE_SERVICE_TELEGRAM_TOKEN" default:""`
+	Timeout        time.Duration `envconfig:"EXAMPLE_SERVICE_TELEGRAM_TIMEOUT" default:"10s"`
+	AllowedChatIDs []int64       `envconfig:"EXAMPLE_SERVICE_TELEGRAM_ALLOWED_CHAT_IDS"`
 }
 
 func FromEnv() (*Config, error) {

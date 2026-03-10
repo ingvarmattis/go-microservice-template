@@ -22,11 +22,11 @@ func NewZap() *Zap {
 
 func newZap() *zap.Logger {
 	encoderCfg := zapcore.EncoderConfig{
-		MessageKey:  "_m",
+		MessageKey:  "m",
 		NameKey:     "logger",
-		LevelKey:    "_l",
+		LevelKey:    "l",
 		EncodeLevel: zapcore.LowercaseLevelEncoder,
-		TimeKey:     "_t",
+		TimeKey:     "t",
 		EncodeTime:  zapcore.ISO8601TimeEncoder,
 	}
 
@@ -43,6 +43,18 @@ func (z *Zap) Warn(msg string, args ...zap.Field) {
 
 func (z *Zap) Error(msg string, args ...zap.Field) {
 	z.logger.Error(msg, args...)
+}
+
+// Zap returns the underlying *zap.Logger for integration with code that requires it (e.g. Telegram bot).
+func (z *Zap) Zap() *zap.Logger {
+	return z.logger
+}
+
+// WithFields returns a new Zap with the given fields attached to every log entry (e.g. zap.String("type", "unary")).
+func (z *Zap) WithFields(fields ...zap.Field) *Zap {
+	return &Zap{
+		logger: z.logger.With(fields...),
+	}
 }
 
 func (z *Zap) With(args ...string) *Zap {

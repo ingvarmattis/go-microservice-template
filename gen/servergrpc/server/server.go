@@ -80,6 +80,20 @@ func (s *Server) ServeHTTP(port *int) error {
 
 	if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", *port),
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// CORS preflight
+			if r.Method == "OPTIONS" {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				w.Header().Set("Access-Control-Max-Age", "3600")
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
 			if r.ProtoMajor == 2 && r.Header.Get("Content-Type") == "application/grpc" {
 				s.grpcServer.ServeHTTP(w, r)
 				return
