@@ -1,0 +1,67 @@
+name: Docker Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: us-west2-docker.pkg.dev
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REPOSITORY: containers
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: example
+    if: github.event_name != 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_REGISTRY_SA_KEY }}
+
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/backend
+        tags: |
+          type=raw,value=latest
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix=,suffix=,format=long
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./build/app/docker/Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        provenance: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+
+    - name: Output image info
+      run: |
+        echo "image pushed successfully!"
+        echo "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/backend"
